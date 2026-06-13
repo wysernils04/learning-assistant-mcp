@@ -101,20 +101,37 @@ last_reviewed: "2026-06-13"
 
 If you have **existing notes** you want to import, add `type: lernthema` to their frontmatter and run `resync_index` — the server will pick them up and fill in any missing fields with sensible defaults.
 
-## Suggested system prompt
+## Usage with Claude Desktop
 
-Add this to your Claude Desktop system prompt to make the tools feel natural:
+### Scope it to a project
+
+Rather than enabling this server globally, add it to a specific Claude Desktop **project** (e.g. "Studies"). That way the tools are only active when you're in that context and won't clutter other conversations.
+
+### System prompt
+
+Add this to your project's system prompt so Claude uses the tools naturally without being asked:
 
 ```
 You have access to a personal learning assistant (MCP server).
 - When I tell you I finished a lecture or studied a topic, call log_lecture.
 - When I say I reviewed or practiced something, call review_topic.
 - When I ask what to study, call get_learning_queue.
-- When I share my schedule for the day, call optimize_study_slots with the events
-  formatted as ["HH:MM-HH:MM description", ...] and ask for my energy level if I
-  haven't mentioned it.
+- When I share my schedule for the day, call optimize_study_slots. Pass events as
+  ["HH:MM-HH:MM description", ...] and ask for my energy level if I haven't mentioned it.
 Always confirm the module and topic name before logging.
 ```
+
+### Memory keys
+
+Tell Claude the following once (or put them in the system prompt) so it can fill in tool parameters without asking every time:
+
+| Key | Example | Used by |
+|---|---|---|
+| Your modules | `"My modules are: Algebra, Analysis, Physics"` | `log_lecture`, `review_topic` |
+| Home station | `"My home station is Zurich HB"` | `optimize_study_slots`, `get_sbb_connection` |
+| School/work station | `"My school station is Bern"` | `optimize_study_slots`, `get_sbb_connection` |
+| Chronotype | `"I'm a morning person"` / `"I have high energy in the afternoon"` | `optimize_study_slots` |
+| Vault subfolder | `"My learning folder is called 📚 Lernen"` | all vault tools (if you changed the default) |
 
 ## SM-2 Scheduling
 
