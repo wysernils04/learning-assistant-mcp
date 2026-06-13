@@ -18,6 +18,7 @@ A personal spaced-repetition learning assistant that runs as an [MCP](https://mo
 | `optimize_study_slots` | Given a list of calendar events and current energy level, suggest the best study windows — factoring in SBB travel times. |
 | `get_sbb_connection` | Look up the next SBB connection between two stations. |
 | `get_streak` | Return the current study streak and daily load summary. |
+| `resync_index` | Rebuild the SQLite index from all notes in the vault. Use this if you edited notes manually in Obsidian or migrated existing notes. |
 
 ## Setup
 
@@ -69,6 +70,50 @@ Add the server to your `claude_desktop_config.json`:
     }
   }
 }
+```
+
+## Vault structure
+
+The server creates and manages notes automatically — no manual folder setup required. The layout is:
+
+```
+<vault>/
+└── 📚 Lernen/          ← OBSIDIAN_LERNEN_DIR
+    └── <Module>/       ← one folder per module (e.g. "Algebra")
+        └── <topic>.md  ← one note per topic (slugified filename)
+```
+
+Each note gets the following YAML frontmatter written and kept up to date:
+
+```yaml
+---
+type: lernthema
+module: Algebra
+topic: Lineare Funktionen
+understanding_score: 4
+ease_factor: 2.5
+interval: 4
+repetitions: 1
+next_review: "2026-06-17"
+last_reviewed: "2026-06-13"
+---
+```
+
+If you have **existing notes** you want to import, add `type: lernthema` to their frontmatter and run `resync_index` — the server will pick them up and fill in any missing fields with sensible defaults.
+
+## Suggested system prompt
+
+Add this to your Claude Desktop system prompt to make the tools feel natural:
+
+```
+You have access to a personal learning assistant (MCP server).
+- When I tell you I finished a lecture or studied a topic, call log_lecture.
+- When I say I reviewed or practiced something, call review_topic.
+- When I ask what to study, call get_learning_queue.
+- When I share my schedule for the day, call optimize_study_slots with the events
+  formatted as ["HH:MM-HH:MM description", ...] and ask for my energy level if I
+  haven't mentioned it.
+Always confirm the module and topic name before logging.
 ```
 
 ## SM-2 Scheduling
