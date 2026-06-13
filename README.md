@@ -8,6 +8,48 @@ A personal spaced-repetition learning assistant that runs as an [MCP](https://mo
 - **SQLite** acts as a fast query cache and stores streak/cognitive-load state that has no per-note equivalent.
 - Every write operation (`log_lecture`, `review_topic`) updates both the note frontmatter and the SQLite row atomically.
 
+## Quick start
+
+1. **Clone and install**
+   ```bash
+   git clone https://github.com/wysernils04/learning-assistant-mcp.git
+   cd learning-assistant-mcp
+   python -m venv .venv
+   source .venv/bin/activate        # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+2. **Add the server to Claude Desktop**
+
+   Open `claude_desktop_config.json` in a text editor:
+   - **Mac:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+   Add the following block (replace the paths with your own):
+   ```json
+   {
+     "mcpServers": {
+       "learning-assistant": {
+         "command": "/absolute/path/to/learning-assistant-mcp/.venv/bin/python",
+         "args": ["/absolute/path/to/learning-assistant-mcp/learning_assistant_v3.py"],
+         "env": {
+           "OBSIDIAN_VAULT_PATH": "/absolute/path/to/your/obsidian/vault"
+         }
+       }
+     }
+   }
+   ```
+   > The `env` block is all you need — no `.env` file required for Claude Desktop.
+
+3. **Restart Claude Desktop** — the config is only read on startup.
+
+4. **Verify** — open a new conversation and ask:
+   > *"What learning tools do you have access to?"*
+
+   Claude should list all 7 tools (`log_lecture`, `review_topic`, `get_learning_queue`, `optimize_study_slots`, `get_sbb_connection`, `get_streak`, `resync_index`). If it doesn't, double-check the file paths in the config and restart again.
+
+---
+
 ## Tools
 
 | Tool | Description |
@@ -20,31 +62,7 @@ A personal spaced-repetition learning assistant that runs as an [MCP](https://mo
 | `get_streak` | Return the current study streak and daily load summary. |
 | `resync_index` | Rebuild the SQLite index from all notes in the vault. Use this if you edited notes manually in Obsidian or migrated existing notes. |
 
-## Setup
-
-### Prerequisites
-
-- Python 3.11+
-- An Obsidian vault
-- Claude Desktop (or any MCP-compatible host)
-
-### Install
-
-```bash
-git clone https://github.com/wysernils04/learning-assistant-mcp.git
-cd learning-assistant-mcp
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Configure
-
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
+## Configuration reference
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -54,23 +72,7 @@ cp .env.example .env
 | `SBB_API_BASE` | No | `https://transport.opendata.ch/v1` | SBB transport API base URL |
 | `SBB_TRAVEL_FALLBACK_MIN` | No | `30` | Fallback travel time in minutes if the API is unreachable |
 
-### Register with Claude Desktop
-
-Add the server to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "learning-assistant": {
-      "command": "/absolute/path/to/.venv/bin/python",
-      "args": ["/absolute/path/to/learning_assistant_v3.py"],
-      "env": {
-        "OBSIDIAN_VAULT_PATH": "/absolute/path/to/your/vault"
-      }
-    }
-  }
-}
-```
+Set these in the `env` block of `claude_desktop_config.json` (as shown in the quick start), or in a `.env` file next to the script if you want to run it directly from the command line.
 
 ## Vault structure
 
