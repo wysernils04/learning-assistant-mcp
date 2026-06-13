@@ -1,0 +1,82 @@
+# Learning Assistant MCP Server
+
+A personal spaced-repetition learning assistant that runs as an [MCP](https://modelcontextprotocol.io/) server. It schedules study sessions using the SM-2 algorithm, syncs scheduling state to your Obsidian vault's YAML frontmatter, and is aware of your SBB commute times to help you find optimal study slots.
+
+## How it works
+
+- **Obsidian vault** is the source of truth — each topic is an Obsidian note; scheduling metadata lives in the YAML frontmatter.
+- **SQLite** acts as a fast query cache and stores streak/cognitive-load state that has no per-note equivalent.
+- Every write operation (`log_lecture`, `review_topic`) updates both the note frontmatter and the SQLite row atomically.
+
+## Tools
+
+| Tool | Description |
+|---|---|
+| `log_lecture` | Record a newly studied topic with an initial understanding score (0–5). Creates the Obsidian note if it doesn't exist. |
+| `review_topic` | Log a review session and update the SM-2 interval, ease factor, and next-due date. |
+| `get_learning_queue` | Return topics due for review today, sorted by priority. |
+| `optimize_study_slots` | Given a list of calendar events and current energy level, suggest the best study windows — factoring in SBB travel times. |
+| `get_sbb_connection` | Look up the next SBB connection between two stations. |
+| `get_streak` | Return the current study streak and daily load summary. |
+
+## Setup
+
+### Prerequisites
+
+- Python 3.11+
+- An Obsidian vault
+- Claude Desktop (or any MCP-compatible host)
+
+### Install
+
+```bash
+git clone https://github.com/wysernils04/learning-assistant-mcp.git
+cd learning-assistant-mcp
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Configure
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `OBSIDIAN_VAULT_PATH` | Yes | — | Absolute path to your Obsidian vault root |
+| `OBSIDIAN_LERNEN_DIR` | No | `📚 Lernen` | Subfolder inside the vault for learning notes |
+| `LEARNING_DB_PATH` | No | `<vault>/.learning_index.db` | Path for the SQLite cache |
+| `SBB_API_BASE` | No | `https://transport.opendata.ch/v1` | SBB transport API base URL |
+| `SBB_TRAVEL_FALLBACK_MIN` | No | `30` | Fallback travel time in minutes if the API is unreachable |
+
+### Register with Claude Desktop
+
+Add the server to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "learning-assistant": {
+      "command": "/absolute/path/to/.venv/bin/python",
+      "args": ["/absolute/path/to/learning_assistant_v3.py"],
+      "env": {
+        "OBSIDIAN_VAULT_PATH": "/absolute/path/to/your/vault"
+      }
+    }
+  }
+}
+```
+
+## SM-2 Scheduling
+
+Understanding scores and quality scores both use a 0–5 scale:
+
+- **0–2** — Poor recall; interval resets, ease factor decreases.
+- **3** — Marginal; interval stays short.
+- **4–5** — Good/perfect recall; interval and ease factor increase.
+
+Initial intervals by understanding score: `{0: 1d, 1: 1d, 2: 2d, 3: 2d, 4: 4d, 5: 6d}`.
