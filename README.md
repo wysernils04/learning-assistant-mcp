@@ -4,6 +4,41 @@ A personal spaced-repetition learning assistant that runs as an [MCP](https://mo
 
 ## How it works
 
+```mermaid
+flowchart TD
+    User([You]) -->|"finished a lecture /<br/>reviewed a topic /<br/>what should I study?"| Claude[Claude Desktop]
+    Claude <-->|MCP protocol| Server[Learning Assistant<br/>MCP Server]
+
+    subgraph Tools[" "]
+        direction LR
+        Write["log_lecture<br/>review_topic"]
+        Read["get_learning_queue<br/>get_streak"]
+        Plan["optimize_study_slots<br/>get_sbb_connection"]
+        Sync["resync_index"]
+    end
+
+    Server --- Tools
+
+    Write -->|"atomic dual-write"| Vault[("Obsidian Vault<br/>YAML frontmatter<br/><i>source of truth</i>")]
+    Write -->|"atomic dual-write"| DB[("SQLite<br/>.learning_index.db<br/><i>query cache + streak</i>")]
+
+    Read --> DB
+    Sync -->|"rebuild from notes"| Vault
+    Sync --> DB
+
+    Plan -->|"travel times"| SBB[["SBB OpenData API"]]
+    Read -.->|"due topics"| Plan
+
+    SM2{{"SM-2 scheduling<br/>interval · ease · next_review"}}
+    Write --- SM2
+
+    style Vault fill:#7c3aed,color:#fff
+    style DB fill:#0ea5e9,color:#fff
+    style Claude fill:#d97706,color:#fff
+    style SBB fill:#dc2626,color:#fff
+    style SM2 fill:#059669,color:#fff
+```
+
 - **Obsidian vault** is the source of truth — each topic is an Obsidian note; scheduling metadata lives in the YAML frontmatter.
 - **SQLite** acts as a fast query cache and stores streak/cognitive-load state that has no per-note equivalent.
 - Every write operation (`log_lecture`, `review_topic`) updates both the note frontmatter and the SQLite row atomically.
