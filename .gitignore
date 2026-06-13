@@ -1,0 +1,38 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Secrets and local config
+.env
+
+# Database (SQLite cache — regenerated at runtime)
+*.db
+*.sqlite
+*.sqlite3
+.learning_index.db
+
+# Google OAuth credentials (for future Calendar integration)
+credentials.json
+token.json
+*.pickle
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
